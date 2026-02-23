@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Half Marathon Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #f5f0e8;
+    font-family: 'DM Sans', sans-serif;
+    color: #2c2416;
+    min-height: 100vh;
+    padding: 28px 16px 48px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(30px, 7vw, 54px);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: #1a1008;
+    text-align: center;
+    line-height: 1.1;
+  }
+
+  .subtitle {
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #999;
+    margin-top: 6px;
+  }
+
+  /* Date setup card */
+  .date-card {
+    max-width: 480px;
+    margin: 24px auto 0;
+    background: #fff;
+    border-radius: 14px;
+    border: 1.5px solid #e8e0d0;
+    padding: 18px 20px;
+  }
+  .date-card-header {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #b87333;
+    margin-bottom: 14px;
+  }
+  .date-options {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .date-tab {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid #ddd;
+    background: #fff;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .date-tab.active {
+    background: #b87333;
+    border-color: #b87333;
+    color: #fff;
+  }
+
+  .mode-panel { display: none; }
+  .mode-panel.visible { display: block; }
+
+  /* Start date mode */
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .input-row label {
+    font-size: 12px;
+    color: #888;
+    white-space: nowrap;
+  }
+  .date-input {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 7px 12px;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    background: #faf8f5;
+    color: #2c2416;
+    outline: none;
+    flex: 1;
+    min-width: 140px;
+  }
+  .date-input:focus { border-color: #b87333; }
+  .apply-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 8px;
+    border: none;
+    background: #b87333;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .apply-btn:active { opacity: 0.8; }
+  .hint-text {
+    font-size: 11px;
+    color: #bbb;
+    margin-top: 8px;
+  }
+
+  /* Manual week dates */
+  .manual-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .manual-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .manual-item label {
+    font-size: 11px;
+    color: #b87333;
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 44px;
+  }
+  .manual-item input {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    padding: 5px 8px;
+    border: 1.5px solid #ddd;
+    border-radius: 7px;
+    background: #faf8f5;
+    color: #2c2416;
+    outline: none;
+    width: 100%;
+  }
+  .manual-item input:focus { border-color: #b87333; }
+  .manual-save-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    background: #b87333;
+    color: #fff;
+    cursor: pointer;
+    margin-top: 14px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .manual-save-btn:active { opacity: 0.8; }
+
+  /* Progress */
+  .progress-wrap {
+    max-width: 480px;
+    margin: 20px auto 0;
+  }
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 7px;
+  }
+  .progress-meta span:last-child { color: #b87333; font-weight: 600; }
+  .progress-track {
+    height: 8px;
+    background: #e0d8cc;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #b87333, #d4956a);
+    transition: width 0.4s ease;
+  }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; margin-top: 28px; }
+  table { border-collapse: collapse; width: 100%; min-width: 600px; }
+
+  thead th {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #aaa;
+    padding: 0 4px 10px;
+    text-align: center;
+  }
+  thead th:first-child {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    color: #b87333;
+    text-transform: none;
+    letter-spacing: 0;
+    text-align: left;
+    padding-left: 4px;
+    min-width: 88px;
+  }
+
+  tbody tr td { padding: 4px 3px; vertical-align: middle; }
+  tbody tr:nth-child(even) td { background: rgba(0,0,0,0.025); }
+
+  .week-cell { text-align: left; padding-left: 4px; }
+  .week-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #b87333;
+    display: block;
+  }
+  .week-date {
+    font-size: 10px;
+    color: #ccc;
+    display: block;
+    margin-top: 1px;
+    white-space: nowrap;
+  }
+  .week-date.set { color: #aaa; }
+
+  /* Workout buttons */
+  .cell-btn {
+    background: #fff;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    color: #3a3028;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10.5px;
+    font-weight: 400;
+    padding: 7px 5px;
+    cursor: pointer;
+    width: 100%;
+    min-width: 74px;
+    transition: all 0.16s ease;
+    line-height: 1.3;
+    text-align: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cell-btn:active { transform: scale(0.96); }
+  .cell-btn.rest {
+    background: transparent;
+    border-color: transparent;
+    color: #ccc;
+    cursor: default;
+    font-style: italic;
+    font-size: 10px;
+  }
+  .cell-btn.race {
+    border-color: #e07b54;
+    color: #c05a30;
+    font-weight: 700;
+    background: #fff8f5;
+  }
+  .cell-btn.done {
+    background: #edf7f1;
+    border-color: #6abf8a;
+    color: #3a8a5a;
+    text-decoration: line-through;
+    font-weight: 500;
+  }
+  .cell-btn.race.done {
+    background: #fff0eb;
+    border-color: #e07b54;
+    color: #b05030;
+  }
+
+  footer {
+    text-align: center;
+    font-size: 11px;
+    color: #bbb;
+    margin-top: 32px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Half Marathon</h1>
+<p class="subtitle">12-Week Training Plan</p>
+
+<!-- Date Card -->
+<div class="date-card">
+  <div class="date-card-header">📅 Set Your Schedule</div>
+  <div class="date-options">
+    <button class="date-tab active" onclick="switchMode('start')">Auto from Start Date</button>
+    <button class="date-tab" onclick="switchMode('manual')">Enter Dates Manually</button>
+  </div>
+
+  <!-- Start date mode -->
+  <div class="mode-panel visible" id="mode-start">
+    <div class="input-row">
+      <label>Week 1 starts</label>
+      <input type="date" class="date-input" id="start-date-input"/>
+      <button class="apply-btn" onclick="applyStartDate()">Apply</button>
+    </div>
+    <p class="hint-text">Automatically fills all 12 weeks in 7-day increments.</p>
+  </div>
+
+  <!-- Manual mode -->
+  <div class="mode-panel" id="mode-manual">
+    <div class="manual-grid" id="manual-grid"></div>
+    <button class="manual-save-btn" onclick="saveManualDates()">Save Dates</button>
+  </div>
+</div>
+
+<!-- Progress -->
+<div class="progress-wrap">
+  <div class="progress-meta">
+    <span id="prog-label">0 of 0 workouts</span>
+    <span id="prog-pct">0%</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="prog-bar" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Week</th>
+        <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<footer>Tap any workout to mark it complete · Progress saves to your device</footer>
+
+<script>
+const schedule = [
+  { week:1,  mon:"Rest", tue:"4.8 km run",  wed:"4.8 km run",  thu:"4.8 km run", fri:"Rest", sat:"6.4 km run",  sun:"60 min cross" },
+  { week:2,  mon:"Rest", tue:"4.8 km run",  wed:"4.8 km pace", thu:"4.8 km run", fri:"Rest", sat:"8.1 km run",  sun:"60 min cross" },
+  { week:3,  mon:"Rest", tue:"4.8 km run",  wed:"6.4 km run",  thu:"4.8 km run", fri:"Rest", sat:"9.7 km run",  sun:"60 min cross" },
+  { week:4,  mon:"Rest", tue:"4.8 km run",  wed:"6.4 km pace", thu:"4.8 km run", fri:"Rest", sat:"11.3 km run", sun:"60 min cross" },
+  { week:5,  mon:"Rest", tue:"4.8 km run",  wed:"6.4 km run",  thu:"4.8 km run", fri:"Rest", sat:"12.9 km run", sun:"60 min cross" },
+  { week:6,  mon:"Rest", tue:"4.8 km run",  wed:"6.4 km pace", thu:"4.8 km run", fri:"Rest", sat:"5-K Race",    sun:"60 min cross" },
+  { week:7,  mon:"Rest", tue:"4.8 km run",  wed:"8.1 km run",  thu:"4.8 km run", fri:"Rest", sat:"14.5 km run", sun:"60 min cross" },
+  { week:8,  mon:"Rest", tue:"4.8 km run",  wed:"8.1 km pace", thu:"4.8 km run", fri:"Rest", sat:"16.1 km run", sun:"60 min cross" },
+  { week:9,  mon:"Rest", tue:"4.8 km run",  wed:"8.1 km run",  thu:"4.8 km run", fri:"Rest", sat:"10-K Race",   sun:"60 min cross" },
+  { week:10, mon:"Rest", tue:"4.8 km run",  wed:"8.1 km pace", thu:"4.8 km run", fri:"Rest", sat:"17.7 km run", sun:"60 min cross" },
+  { week:11, mon:"Rest", tue:"4.8 km run",  wed:"8.1 km run",  thu:"4.8 km run", fri:"Rest", sat:"19.3 km run", sun:"60 min cross" },
+  { week:12, mon:"Rest", tue:"4.8 km run",  wed:"3.2 km pace", thu:"3.2 km run", fri:"Rest", sat:"Rest",        sun:"Half Marathon" },
+];
+
+const days = ["mon","tue","wed","thu","fri","sat","sun"];
+const STORAGE_KEY = "halfmarathon_progress_v1";
+const DATES_KEY   = "halfmarathon_dates_v1";
+
+function loadChecked() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; } }
+function saveChecked(obj) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); } catch {} }
+function loadDates()   { try { return JSON.parse(localStorage.getItem(DATES_KEY)) || {}; } catch { return {}; } }
+function saveDatesStore(obj) { try { localStorage.setItem(DATES_KEY, JSON.stringify(obj)); } catch {} }
+
+let checked   = loadChecked();
+let weekDates = loadDates();  // { 1: "2025-03-03", 2: "2025-03-10", ... }
+
+function isRest(v) { return v === "Rest"; }
+function isRace(v) { return v.includes("Race") || v === "Half Marathon"; }
+
+function formatDate(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { month:"short", day:"numeric" });
+}
+
+function switchMode(mode) {
+  document.querySelectorAll(".date-tab").forEach((t, i) => {
+    t.classList.toggle("active", (mode === "start" && i === 0) || (mode === "manual" && i === 1));
+  });
+  document.getElementById("mode-start").classList.toggle("visible", mode === "start");
+  document.getElementById("mode-manual").classList.toggle("visible", mode === "manual");
+}
+
+function applyStartDate() {
+  const val = document.getElementById("start-date-input").value;
+  if (!val) return;
+  const [y, m, d] = val.split("-").map(Number);
+  const base = new Date(y, m - 1, d);
+  const newDates = {};
+  for (let w = 1; w <= 12; w++) {
+    const dt = new Date(base);
+    dt.setDate(base.getDate() + (w - 1) * 7);
+    newDates[w] = dt.toISOString().slice(0, 10);
+    const inp = document.getElementById(`manual-week-${w}`);
+    if (inp) inp.value = newDates[w];
+  }
+  weekDates = newDates;
+  saveDatesStore(weekDates);
+  buildTable();
+}
+
+function saveManualDates() {
+  for (let w = 1; w <= 12; w++) {
+    const inp = document.getElementById(`manual-week-${w}`);
+    if (inp && inp.value) weekDates[w] = inp.value;
+    else delete weekDates[w];
+  }
+  saveDatesStore(weekDates);
+  buildTable();
+}
+
+function buildManualGrid() {
+  const grid = document.getElementById("manual-grid");
+  grid.innerHTML = "";
+  for (let w = 1; w <= 12; w++) {
+    const item = document.createElement("div");
+    item.className = "manual-item";
+    item.innerHTML = `<label>Week ${w}</label><input type="date" id="manual-week-${w}" value="${weekDates[w] || ""}"/>`;
+    grid.appendChild(item);
+  }
+}
+
+function prefillStartInput() {
+  if (weekDates[1]) document.getElementById("start-date-input").value = weekDates[1];
+}
+
+function updateProgress() {
+  let total = 0, done = 0;
+  schedule.forEach(row => {
+    days.forEach(d => {
+      if (!isRest(row[d])) {
+        total++;
+        if (checked[`${row.week}-${d}`]) done++;
+      }
+    });
+  });
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById("prog-label").textContent = `${done} of ${total} workouts`;
+  document.getElementById("prog-pct").textContent = `${pct}%`;
+  document.getElementById("prog-bar").style.width = pct + "%";
+}
+
+function buildTable() {
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+  schedule.forEach(row => {
+    const tr = document.createElement("tr");
+
+    const tdWeek = document.createElement("td");
+    tdWeek.className = "week-cell";
+    const dateStr = weekDates[row.week] ? formatDate(weekDates[row.week]) : "—";
+    tdWeek.innerHTML = `<span class="week-num">Wk ${row.week}</span><span class="week-date${weekDates[row.week] ? " set" : ""}">${dateStr}</span>`;
+    tr.appendChild(tdWeek);
+
+    days.forEach(day => {
+      const val = row[day];
+      const key = `${row.week}-${day}`;
+      const td  = document.createElement("td");
+      const btn = document.createElement("button");
+      btn.className = "cell-btn" +
+        (isRest(val) ? " rest" : "") +
+        (isRace(val) ? " race" : "") +
+        (checked[key] && !isRest(val) ? " done" : "");
+      btn.textContent = (checked[key] && !isRest(val) ? "✓ " : "") + val;
+
+      if (!isRest(val)) {
+        btn.addEventListener("click", () => {
+          checked[key] = !checked[key];
+          saveChecked(checked);
+          btn.className = "cell-btn" + (isRace(val) ? " race" : "") + (checked[key] ? " done" : "");
+          btn.textContent = (checked[key] ? "✓ " : "") + val;
+          updateProgress();
+        });
+      }
+
+      td.appendChild(btn);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+buildManualGrid();
+prefillStartInput();
+buildTable();
+updateProgress();
+</script>
+</body>
+</html>
